@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FIREGUARD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div id="danger">⚠ PERIGO — NÍVEL CRÍTICO DE GÁS</div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">FIREGUARD <span>prevenção de incêndio</span></div>
+  <div class="topright">
+    <div class="pill"><div class="dot" id="cdot"></div><span id="clabel">DESCONECTADO</span></div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+
+    <div class="card">
+      <div class="card-title">// Porta Serial</div>
+      <button class="btn sm" id="ref-btn">↺ ATUALIZAR PORTAS</button>
+      <select id="port-select"><option value="">-- selecione --</option></select>
+      <button class="btn" id="con-btn">CONECTAR</button>
+      <br><br>
+      <button class="btn red" id="dis-btn" disabled>DESCONECTAR</button>
+    </div>
+
+    <div class="card">
+      <div class="lv-row">
+        <div class="lv-pip" style="background:var(--c0);box-shadow:0 0 6px var(--c0)"></div>
+        <span class="lv-name">AR LIMPO</span>
+        <span class="lv-range">0 – 229</span>
+      </div>
+      <div class="lv-row">
+        <div class="lv-pip" style="background:var(--c1);box-shadow:0 0 6px var(--c1)"></div>
+        <span class="lv-name">GAS BAIXO</span>
+        <span class="lv-range">230 – 459</span>
+      </div>
+      <div class="lv-row">
+        <div class="lv-pip" style="background:var(--c2);box-shadow:0 0 6px var(--c2)"></div>
+        <span class="lv-name">GAS MEDIO</span>
+        <span class="lv-range">460 – 689</span>
+      </div>
+      <div class="lv-row">
+        <div class="lv-pip" style="background:var(--c3);box-shadow:0 0 6px var(--c3)"></div>
+        <span class="lv-name">!!! PERIGO !!!</span>
+        <span class="lv-range">≥ 690</span>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="card-title">// Log</div>
+      <div id="log"></div>
+    </div>
+
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <div id="overlay">
+      <div class="ico">⬡</div>
+      <p>CONECTE UM ARDUINO</p>
+    </div>
+
+    <!-- LCD replica -->
+    <div id="lcd-wrap">
+      <div id="lcd">
+        <div id="lcd-header">LCD 16x2 — TELA LED</div>
+        <div id="lcd-l1">AR LIMPO        </div>
+        <div id="lcd-l2">Nivel: ---      </div>
+      </div>
+    </div>
+
+    <!-- Gauge + Stats -->
+    <div id="gauge-row">
+      <div id="gauge-wrap">
+        <svg id="gauge-svg" viewBox="0 0 200 200">
+          <path id="g-track" d="" stroke="#cbd0da" stroke-width="13" fill="none" stroke-linecap="round"/>
+          <path id="g-arc"   d="" stroke="var(--c0)" stroke-width="13" fill="none" stroke-linecap="round"
+            style="transition:stroke .5s;filter:drop-shadow(0 0 5px var(--c0))"/>
+        </svg>
+        <div id="gauge-center">
+          <div id="gval">—</div>
+          <div id="gunit">0 - 920</div>
+          <div id="glabel">AGUARDANDO</div>
+        </div>
+      </div>
+
+      <div id="stats">
+        <div class="stat">
+          <div class="stat-t">// MÍNIMO</div>
+          <div class="stat-v" id="s-min">—</div>
+          <div class="stat-s">sessão</div>
+        </div>
+        <div class="stat">
+          <div class="stat-t">// MÁXIMO</div>
+          <div class="stat-v" id="s-max">—</div>
+          <div class="stat-s">sessão</div>
+        </div>
+        <div class="stat">
+          <div class="stat-t">// MÉDIA</div>
+          <div class="stat-v" id="s-avg">—</div>
+          <div class="stat-s">último 1 minuto</div>
+        </div>
+        <div class="stat">
+          <div class="stat-t">// TOTAL</div>
+          <div class="stat-v" id="s-cnt">0</div>
+          <div class="stat-s">leituras</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div id="chart-card">
+      <div id="chart-hdr">
+        <div class="card-title">// Histórico em Tempo Real</div>
+        <span id="chart-pts" class="card-title">últimos 2 minutos</span>
+      </div>
+      <div id="chart-wrap">
+        <canvas id="chart-c"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+// ── CONFIGURAÇÃO DOS NÍVEIS (espelho do Arduino: num_nivel=230) ────
+const NUM_NIVEL_GAS = 230;
+const NIVEIS = [
+  { rotulo:'AR LIMPO',      cor:'#00aa55', brilho:'0 0 10px #00aa5530,0 0 24px #00aa5515' },
+  { rotulo:'GAS BAIXO',     cor:'#0088cc', brilho:'0 0 10px #0088cc30,0 0 24px #0088cc15' },
+  { rotulo:'GAS MEDIO',     cor:'#cc8800', brilho:'0 0 10px #cc880030,0 0 24px #cc880015' },
+  { rotulo:'!!! PERIGO !!!',cor:'#cc1133', brilho:'0 0 10px #cc113330,0 0 24px #cc113318' },
+];
+function obterNivel(valorADC) {
+  const indice = Math.min(Math.floor(valorADC / NUM_NIVEL_GAS), 3);
+  return { indice, ...NIVEIS[indice] };
+}
+
+// ── ARCO DO MEDIDOR ────────────────────────────────────────────────
+const CENTRO_X=100, CENTRO_Y=110, RAIO=78;
+const ANGULO_INICIO = 215*Math.PI/180, VARREDURA = 270*Math.PI/180;
+function polarParaXY(angulo){ return [CENTRO_X+RAIO*Math.cos(angulo), CENTRO_Y+RAIO*Math.sin(angulo)]; }
+function desenharArco(inicio, fim){
+  const [x1,y1]=polarParaXY(inicio),[x2,y2]=polarParaXY(fim);
+  return `M ${x1} ${y1} A ${RAIO} ${RAIO} 0 ${fim-inicio>Math.PI?1:0} 1 ${x2} ${y2}`;
+}
+document.getElementById('g-track').setAttribute('d', desenharArco(ANGULO_INICIO, ANGULO_INICIO+VARREDURA));
+const elementoArco = document.getElementById('g-arc');
+function atualizarArco(valorADC, cor){
+  const porcentagem=Math.min(valorADC/1023,1);
+  elementoArco.setAttribute('d', porcentagem<0.002?'':desenharArco(ANGULO_INICIO, ANGULO_INICIO+porcentagem*VARREDURA));
+  elementoArco.style.stroke=cor;
+  elementoArco.style.filter=`drop-shadow(0 0 5px ${cor}88)`;
+}
+
+// ── GRÁFICO ────────────────────────────────────────────────────────
+const MAX_PONTOS=267; // 2 min divididos pelo delay de 450ms entre leituras (120s/0.45s =~ 267 pontos)
+const dadosGrafico = { labels:[], datasets:[{
+  data:[], borderColor:'#00aa55', borderWidth:2,
+  pointRadius:0, fill:true, backgroundColor:'#00aa5515', tension:0.35,
+}]};
+
+const grafico = new Chart(document.getElementById('chart-c').getContext('2d'), {
+  type:'line', data:dadosGrafico,
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    animation:{duration:80},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{ label: item => ` ${item.raw} ADC` },
+        backgroundColor:'#ffffff', borderColor:'#cbd0da', borderWidth:1,
+        titleColor:'#6b7690', bodyColor:'#2c3347',
+        bodyFont:{family:"'VT323'", size:15},
+      }
+    },
+    scales:{
+      x:{ ticks:{display:false}, grid:{color:'#cbd0da'}, border:{color:'#cbd0da'} },
+      y:{
+        min:0, max:920,
+        ticks:{ color:'#6b7690', font:{family:"'VT323'",size:14}, callback:v=>v },
+        grid:{color:'#cbd0da'}, border:{color:'#cbd0da'}
+      }
+    }
+  }
+});
+
+// ── PRÉ-PREENCHER GRÁFICO COM ZEROS ───────────────────────────────
+for (let i = 0; i < MAX_PONTOS; i++) {
+  dadosGrafico.labels.push('');
+  dadosGrafico.datasets[0].data.push(0);
+}
+grafico.update('none');
+
+// ── ESTADO ─────────────────────────────────────────────────────────
+let minSessao=Infinity, maxSessao=-Infinity, totalLeituras=0;
+const bufferLeituras=[];
+
+const pontinho       = document.getElementById('cdot');
+const rotuloConexao  = document.getElementById('clabel');
+const telaOverlay    = document.getElementById('overlay');
+const bannerPerigo   = document.getElementById('danger');
+const elementoLog    = document.getElementById('log');
+
+function aplicarTema(nivel){
+  document.documentElement.style.setProperty('--accent', nivel.cor);
+  document.documentElement.style.setProperty('--glow',   nivel.brilho);
+}
+function registrarLog(mensagem, classe=''){
+  const entrada=document.createElement('span');
+  entrada.className='e '+classe;
+  entrada.textContent=`[${new Date().toLocaleTimeString('pt-BR')}] ${mensagem}`;
+  elementoLog.prepend(entrada);
+  if(elementoLog.children.length>80) elementoLog.lastChild.remove();
+}
+function definirConexao(conectado){
+  pontinho.classList.toggle('on', conectado);
+  rotuloConexao.textContent=conectado?'CONECTADO':'DESCONECTADO';
+  telaOverlay.style.display=conectado?'none':'flex';
+  document.getElementById('con-btn').disabled=conectado;
+  document.getElementById('dis-btn').disabled=!conectado;
+  if(!conectado){ bannerPerigo.classList.remove('show'); }
+}
+
+// LCD — completa com espaços até 16 caracteres
+function linhaLCD(texto){ return (texto+'                ').slice(0,16); }
+
+// ── RECEPÇÃO DE DADOS ──────────────────────────────────────────────
+window.arduino.aoReceberDados(({valor, status, momento})=>{
+  totalLeituras++;
+  if(valor<minSessao) minSessao=valor;
+  if(valor>maxSessao) maxSessao=valor;
+  bufferLeituras.push(valor); if(bufferLeituras.length>MAX_PONTOS) bufferLeituras.shift();
+  const media=Math.round(bufferLeituras.reduce((acumulador,leitura)=>acumulador+leitura,0)/bufferLeituras.length);
+
+  const nivel=obterNivel(valor);
+  aplicarTema(nivel);
+
+  // medidor
+  document.getElementById('gval').textContent=valor;
+  document.getElementById('glabel').textContent=nivel.rotulo;
+  atualizarArco(valor, nivel.cor);
+
+  // estatísticas
+  document.getElementById('s-min').textContent=minSessao===Infinity?'—':minSessao;
+  document.getElementById('s-max').textContent=maxSessao===-Infinity?'—':maxSessao;
+  document.getElementById('s-avg').textContent=media;
+  document.getElementById('s-cnt').textContent=totalLeituras;
+
+  // réplica do LCD
+  document.getElementById('lcd-l1').textContent=linhaLCD(status);
+  document.getElementById('lcd-l2').textContent=linhaLCD(`Nivel: ${valor} PPM`);
+
+  // banner de alerta
+  bannerPerigo.classList.toggle('show', nivel.indice===3);
+
+  // gráfico
+  dadosGrafico.labels.shift();
+  dadosGrafico.labels.push(new Date(momento).toLocaleTimeString('pt-BR'));
+  dadosGrafico.datasets[0].data.shift();
+  dadosGrafico.datasets[0].data.push(valor);
+  dadosGrafico.datasets[0].borderColor=nivel.cor;
+  dadosGrafico.datasets[0].backgroundColor=nivel.cor+'10';
+  grafico.update('none');
+});
+
+window.arduino.aoReceberErro(mensagemErro=>{
+  registrarLog(`Erro serial: ${mensagemErro}`,'err');
+  definirConexao(false);
+});
+window.arduino.aoFechar(()=>{
+  definirConexao(false);
+  registrarLog('Porta fechada.','warn');
+});
+
+// ── CONTROLE DAS PORTAS ────────────────────────────────────────────
+async function atualizarPortas(){
+  const portas=await window.arduino.listarPortas();
+  const seletor=document.getElementById('port-select');
+  seletor.innerHTML='<option value="">-- selecione --</option>';
+  portas.forEach(porta=>{
+    const opcao=document.createElement('option');
+    opcao.value=porta.path;
+    opcao.textContent=`${porta.path}${porta.friendlyName?' — '+porta.friendlyName:''}`;
+    seletor.appendChild(opcao);
+  });
+  registrarLog(`${portas.length} porta(s) encontrada(s)`);
+}
+
+document.getElementById('ref-btn').onclick=atualizarPortas;
+document.getElementById('con-btn').onclick=async()=>{
+  const portaSelecionada=document.getElementById('port-select').value;
+  if(!portaSelecionada){ registrarLog('Selecione uma porta.','warn'); return; }
+  registrarLog(`Conectando em ${portaSelecionada}…`);
+  const resultado=await window.arduino.conectar(portaSelecionada);
+  if(resultado.sucesso){ definirConexao(true); registrarLog(`Conectado: ${portaSelecionada}`,'ok'); }
+  else                 { registrarLog(`Erro: ${resultado.erro}`,'err'); }
+};
+document.getElementById('dis-btn').onclick=async()=>{
+  await window.arduino.desconectar();
+  definirConexao(false);
+  registrarLog('Desconectado.','warn');
+};
+
+atualizarPortas();
+registrarLog('FIREGUARD iniciado.','ok');
+</script>
+</body>
+</html>
