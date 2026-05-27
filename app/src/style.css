@@ -1,0 +1,296 @@
+:root {
+  --bg:      #f0f2f5;
+  --s1:      #e4e7ec;
+  --s2:      #ffffff;
+  --border:  #cbd0da;
+  --muted:   #a0a8b8;
+  --dim:     #6b7690;
+  --text:    #2c3347;
+  --mono:    monospace;
+  --orb:     'Orbitron', sans-serif;
+  --raj:     'Rajdhani', sans-serif;
+
+  /* level colors */
+  --c0: #00aa55;  /* AR LIMPO  */
+  --c1: #0088cc;  /* GAS BAIXO */
+  --c2: #cc8800;  /* GAS MEDIO */
+  --c3: #cc1133;  /* PERIGO    */
+
+  --accent: var(--c0);
+  --glow:   0 0 10px #00aa5530, 0 0 24px #00aa5515;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--raj);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* remove scanline no tema claro */
+body::after { display: none; }
+
+/* ── TOPBAR ── */
+#topbar {
+  -webkit-app-region: drag;
+  display:flex; align-items:center; justify-content:space-between;
+  height:52px; padding:0 28px;
+  border-bottom:1px solid var(--border);
+  background: #e8eaefee;
+  backdrop-filter:blur(10px);
+  position:relative; z-index:10;
+  flex-shrink:0;
+}
+.logo {
+  font-family: var(--orb);
+  font-size:20px; letter-spacing:4px;
+  color: var(--accent);
+  text-shadow: var(--glow);
+  transition: color .5s, text-shadow .5s;
+}
+.logo span { color: var(--muted); }
+.topright {
+  display:flex; align-items:center; gap:20px;
+  -webkit-app-region: no-drag;
+}
+.pill {
+  display:flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:15px; color: var(--dim);
+  letter-spacing:1px;
+}
+.dot {
+  width:9px; height:9px; border-radius:50%;
+  background: var(--muted);
+  transition: background .4s, box-shadow .4s;
+}
+.dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+/* ── LAYOUT ── */
+#layout {
+  flex:1; display:grid;
+  grid-template-columns: 260px 1fr;
+  overflow:hidden;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  border-right:1px solid var(--border);
+  padding:18px 16px;
+  display:flex; flex-direction:column; gap:16px;
+  overflow-y:auto;
+  background: var(--s1);
+}
+.card {
+  background: var(--s2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:14px;
+  box-shadow: 0 1px 3px #0000000a;
+}
+
+.card-title {
+  font-family:var(--mono); font-size:10px; font-weight: bold;
+  letter-spacing:2px; color: var(--dim);
+  text-transform:uppercase; margin-bottom:12px;
+}
+
+select, button { -webkit-app-region:no-drag; }
+
+#port-select {
+  width:100%;
+  background: var(--bg);
+  border:1px solid var(--border);
+  border-radius:4px;
+  color: var(--text);
+  font-family:var(--mono); font-size:14px;
+  padding:7px 9px; margin-bottom:8px;
+  outline:none; cursor:pointer;
+  transition: border-color .2s;
+}
+#port-select:focus { border-color: var(--accent); }
+
+.btn {
+  width:100%; padding:8px;
+  background:transparent;
+  border:1px solid var(--accent);
+  border-radius:4px;
+  color: var(--accent);
+  font-family:var(--mono); font-size:14px;
+  letter-spacing:2px; cursor:pointer;
+  transition: background .2s, box-shadow .2s;
+}
+.btn:hover { background:#00000008; box-shadow: var(--glow); }
+.btn:disabled { opacity:.3; cursor:not-allowed; }
+.btn.red { border-color:#cc1133; color:#cc1133; }
+.btn.red:hover { box-shadow: 0 0 10px #cc113330; }
+.btn.sm {
+  width:100%; margin-bottom:8px;
+  padding:6px;
+  border-color: var(--border); color: var(--dim);
+  font-size:13px;
+}
+.btn.sm:hover { border-color: var(--accent); color: var(--accent); box-shadow:none; }
+
+/* levels legend */
+.lv-row {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 0; border-bottom:1px solid var(--border);
+}
+.lv-row:last-child { border:none; }
+.lv-pip { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.lv-name { font-family:var(--mono); font-size:13px; font-weight: bold; color: var(--dim); flex:1; }
+.lv-range { font-family:var(--mono); font-size:15px; font-weight: bold; color: var(--text); }
+
+/* log */
+#log {
+  flex:1; overflow-y:auto; max-height:340px;
+  font-family:var(--mono); font-size:13px;
+  color: var(--dim); line-height:1.8;
+}
+#log .e { display:block; }
+#log .e.ok   { color:#00885a; }
+#log .e.warn { color:#aa7700; }
+#log .e.err  { color:#cc1133; }
+
+/* ── MAIN ── */
+#main {
+  display:flex; flex-direction:column;
+  padding:20px 24px; gap:18px;
+  overflow:hidden; position:relative;
+}
+
+/* disconnect overlay */
+#overlay {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:14px; z-index:20;
+  background: #f0f2f5cc;
+}
+#overlay .ico { font-size:56px; opacity:.25; filter:grayscale(1); }
+#overlay p {
+  font-family:var(--mono); font-size:16px;
+  color: var(--dim); letter-spacing:3px;
+}
+
+/* ── LCD REPLICA ── */
+#lcd-wrap {
+  display:flex; justify-content:center;
+}
+#lcd {
+  background:#1a3a6e;
+  border:1px solid #cbd0da;
+  border-radius:6px;
+  padding:12px 20px;
+  box-shadow: 0 1px 3px #0000000a;
+  font-family:var(--mono);
+  width:340px;
+}
+#lcd-l1, #lcd-l2 {
+  font-size:22px; font-weight: bold; 
+  color:#ffffff;
+  text-shadow: none;
+  letter-spacing:3px;
+  height:28px; line-height:1;
+  white-space:pre;
+}
+#lcd-header {
+  font-family:var(--raj); font-size:10px; font-weight: bold;
+  color:#a0b8d8; letter-spacing:3px;
+  text-transform:uppercase; margin-bottom:8px;
+  text-align:center;
+}
+
+/* ── GAUGE ROW ── */
+#gauge-row {
+  display:grid;
+  grid-template-columns: 200px 1fr;
+  gap:20px; align-items:center;
+}
+
+#gauge-wrap { position:relative; width:200px; height:200px; flex-shrink:0; }
+#gauge-svg { width:200px; height:200px; }
+#gauge-center {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  pointer-events:none;
+}
+#gval {
+  font-family:var(--orb); font-size:46px; font-weight:900;
+  color: var(--accent); line-height:1;
+  text-shadow: var(--glow);
+  transition: color .5s, text-shadow .5s;
+}
+#gunit { font-family:var(--mono); font-size:12px; color: var(--dim); letter-spacing:2px; margin-top:2px; }
+#glabel {
+  font-family:var(--mono); font-size:13px;
+  color: var(--accent); letter-spacing:1px;
+  margin-top:6px;
+  transition: color .5s;
+}
+
+/* stats */
+#stats {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:12px;
+}
+.stat {
+  background: var(--s2);
+  border:1px solid var(--border);
+  border-radius:6px; padding:13px 15px;
+  box-shadow: 0 1px 3px #0000000a;
+}
+.stat-t { font-family:var(--mono); font-size:11px; font-weight: bold; letter-spacing:2px; color: var(--dim); margin-bottom:5px; }
+.stat-v { font-family:var(--orb); font-size:28px; font-weight: bold; color: var(--accent); transition: color .5s; }
+.stat-s { font-family:var(--raj); font-size:13px; font-weight: bold; color: var(--dim); margin-top:2px; }
+
+/* ── CHART ── */
+#chart-card {
+  flex:1;
+  background: var(--s2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:14px 16px;
+  display:flex; flex-direction:column;
+  min-height:0;
+  box-shadow: 0 1px 3px #0000000a;
+}
+#chart-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+#chart-hdr .card-title { margin:0; }
+#chart-pts { font-family:var(--mono); font-size:14px; font-weight: bold; color: var(--dim); }
+#chart-wrap { flex:1; position:relative; min-height:0; }
+#chart-c { width:100%!important; height:100%!important; }
+
+/* ── PERIGO BANNER ── */
+#danger {
+  position:fixed; top:60px; left:50%; transform:translateX(-50%);
+  z-index:500;
+  background:#fff0f2;
+  border:1px solid #cc1133;
+  border-radius:6px;
+  padding:9px 30px;
+  font-family:var(--orb); font-size:13px;
+  color:#cc1133; letter-spacing:4px;
+  display:none;
+  animation: dangerpulse 0.8s infinite;
+}
+@keyframes dangerpulse {
+  0%,100% { box-shadow: 0 0 8px #cc113330; }
+  50%      { box-shadow: 0 0 20px #cc113366; }
+}
+#danger.show { display:block; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
