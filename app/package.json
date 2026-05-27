@@ -1,0 +1,17 @@
+{
+  "name": "fireguard",
+  "version": "1.0.0",
+  "description": "FIREGUARD - prevenção de incêndios",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0"
+  }
+}
